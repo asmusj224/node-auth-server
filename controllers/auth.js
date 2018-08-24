@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const jwt = require('jwt-simple');
+const validate = require('../utils/jwt');
 
 function tokenForUser(user) {
     const timestamp = new Date().getTime();
@@ -27,7 +28,6 @@ exports.signup = async (req, res, next) => {
         return res.json({ token: tokenForUser(user) });
 
     } catch (err) {
-        console.log(err);
         return next(err);
     }
 
@@ -37,4 +37,24 @@ exports.signin = (req, res) => {
     const { user } = req;
 
     res.json({ token: tokenForUser(user) });
+}
+
+exports.validateJwt = (req, res) => {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.json(false);
+    }
+
+    try {
+        const decoded = jwt.decode(token, process.env.JWT_SECRET);
+        validate.validateToken(decoded, (err, user) => {
+            if (err) {
+                return res.sendStatus(401);
+            }
+
+            return user ? res.send(true) : res.send(false);
+        });
+    } catch (error) {
+        res.sendStatus(401);
+    }
 }
