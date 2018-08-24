@@ -3,12 +3,12 @@ const User = require('../models/user');
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const LocalStrategy = require('passport-local');
+const validate = require('../utils/jwt');
 require('dotenv').config();
 
 
 const localLogin = new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
     try {
-        console.log('locallogin')
         const existingUser = await User.findOne({ email });
         if (!existingUser) {
             return done(null, false);
@@ -37,18 +37,16 @@ const jwtOptions = {
 };
 
 const jwtLogin = new JwtStrategy(jwtOptions, (payload, done) => {
-    const { sub } = payload;
-    User.findById(sub, (err, user) => {
+    validate.validateToken(payload, (err, user) => {
         if (err) {
             return done(err, false);
         }
 
         if (user) {
-            done(null, user);
+            return done(null, user);
         }
 
         done(null, false);
-
     });
 });
 
